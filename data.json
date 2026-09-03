@@ -1,0 +1,103 @@
+{
+  "pedidos": [],
+  "reservas": [
+    {
+      "id": 4,
+      "nombre": "Priscilla vallejos",
+      "productos": [
+        {
+          "producto": "consome",
+          "cantidad": 2,
+          "precio_unitario": 1000,
+          "subtotal": 2000
+        },
+        {
+          "producto": "sopaipillas",
+          "cantidad": 3,
+          "precio_unitario": 300,
+          "subtotal": 900
+        },
+        {
+          "producto": "papas fritas",
+          "cantidad": 1,
+          "precio_unitario": 2000,
+          "subtotal": 2000
+        }
+      ],
+      "total": 4900,
+      "estado": "por entregar",
+      "hora_registro": "15:49",
+      "fecha": "2026-05-30",
+      "hora_reserva": "17:00",
+      "metodo_pago": "efectivo"
+    },
+    {
+      "id": 6,
+      "nombre": "Tia ana",
+      "productos": [
+        {
+          "producto": "consome",
+          "cantidad": 2,
+          "precio_unitario": 1000,
+          "subtotal": 2000
+        }
+      ],
+      "total": 2000,
+      "estado": "entregado",
+      "hora_registro": "17:02",
+      "fecha": "2026-05-30",
+      "hora_reserva": "17:02",
+      "metodo_pago": "efectivo"
+    },
+    {
+      "id": 8,
+      "nombre": "Macarena herrera",
+      "productos": [
+        {
+          "producto": "sopaipillas",
+          "cantidad": 4,
+          "precio_unitario": 300,
+          "subtotal": 1200
+        },
+        {
+          "producto": "papas fritas",
+          "cantidad": 1,
+          "precio_unitario": 2000,
+          "subtotal": 2000
+        }
+      ],
+      "total": 3200,
+      "estado": "por entregar",
+      "hora_registro": "17:19",
+      "fecha": "2026-05-30",
+      "hora_reserva": "18:00",
+      "metodo_pago": "transferencia"
+    },
+    {
+      "id": 9,
+      "nombre": "Tia ana",
+      "productos": [
+        {
+          "producto": "papas fritas",
+          "cantidad": 2,
+          "precio_unitario": 2000,
+          "subtotal": 4000
+        }
+      ],
+      "total": 4000,
+      "estado": "por entregar",
+      "hora_registro": "17:21",
+      "fecha": "2026-05-30",
+      "hora_reserva": "18:00",
+      "metodo_pago": "transferencia"
+    }
+  ],
+  "stock": {
+    "consome": true,
+    "papas fritas": true,
+    "salchipapas": true,
+    "sopaipillas": true
+  },
+  "contador": 11,
+  "ultima_actualizacion": "2026-05-30 21:37:10"
+}

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro de Pedidos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0f0e0c;--surface:#1a1916;--surface2:#242320;--border:#2e2d2a;
+      --accent:#f5a623;--text:#f0ece3;--text-muted:#7a7670;
+      --green:#4ade80;--red:#f87171;--yellow:#fbbf24;
+      --purple:#a78bfa;--blue:#60a5fa;--radius:10px;
+    }
+    body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:2rem 1rem 4rem;font-size:16px;}
+    body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");}
+    .container{max-width:1040px;margin:0 auto;position:relative;z-index:1;}
+
+    /* HEADER */
+    header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2rem;border-bottom:1px solid var(--border);padding-bottom:1.5rem;flex-wrap:wrap;gap:1rem;}
+    .logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,3.5rem);letter-spacing:.06em;line-height:1;}
+    .logo span{color:var(--accent);}
+    .header-right{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;}
+    .stats{display:flex;gap:1.5rem;font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);}
+    .stat strong{display:block;font-size:1.3rem;font-weight:600;color:var(--text);letter-spacing:0;text-transform:none;}
+    .live-dot{display:flex;align-items:center;gap:.4rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);}
+    .live-dot .dot{width:8px;height:8px;border-radius:50%;background:var(--text-muted);transition:background .3s;}
+    .live-dot.connected .dot{background:var(--green);animation:pulse 2s infinite;}
+    .live-dot.connected{color:var(--green);}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .btn-export{display:flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.4rem .8rem;text-decoration:none;transition:all .2s;white-space:nowrap;}
+    .btn-export:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* TABS */
+    .tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;}
+    .tab-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);padding:.55rem 1.25rem;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.02em;}
+    .tab-btn:hover{border-color:var(--accent);color:var(--text);}
+    .tab-btn.active{background:var(--accent);border-color:var(--accent);color:#0f0e0c;}
+    .tab-badge{background:rgba(0,0,0,.25);border-radius:20px;padding:.1rem .45rem;font-size:.7rem;margin-left:.35rem;}
+    .tab-btn.active .tab-badge{background:rgba(0,0,0,.2);}
+
+    /* TAB PANELS */
+    .tab-panel{display:none;}
+    .tab-panel.active{display:block;}
+
+    /* LAYOUT */
+    .layout{display:grid;grid-template-columns:320px 1fr;gap:1.5rem;align-items:start;}
+    @media(max-width:740px){.layout{grid-template-columns:1fr;}}
+
+    /* FORM CARD */
+    .form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;}
+    .form-card h2{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.08em;margin-bottom:1.25rem;}
+    .form-card h2.accent{color:var(--accent);}
+    .form-card h2.purple{color:var(--purple);}
+
+    /* Sidebar sticky con scroll interno */
+    .layout > aside{position:sticky;top:1.5rem;max-height:calc(100vh - 3rem);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--border) transparent;border-radius:var(--radius);}
+    .layout > aside::-webkit-scrollbar{width:4px;}
+    .layout > aside::-webkit-scrollbar-track{background:transparent;}
+    .layout > aside::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+    .field{margin-bottom:1rem;}
+    label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:.4rem;font-weight:500;}
+    input,select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.65rem .85rem;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.92rem;outline:none;transition:border-color .2s;appearance:none;}
+    input:focus,select:focus{border-color:var(--accent);}
+    select option{background:var(--surface2);}
+    input[type="time"]{color-scheme:dark;}
+
+    /* Reserva checkbox */
+    .reserva-toggle{display:flex;align-items:center;gap:.6rem;cursor:pointer;padding:.6rem .85rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;transition:border-color .2s;margin-bottom:1rem;}
+    .reserva-toggle:hover{border-color:var(--purple);}
+    .reserva-toggle input[type=checkbox]{width:16px;height:16px;flex-shrink:0;accent-color:var(--purple);cursor:pointer;padding:0;}
+    .reserva-toggle span{font-size:.85rem;color:var(--text-muted);}
+    .reserva-toggle.checked{border-color:var(--purple);background:rgba(167,139,250,.07);}
+    .reserva-toggle.checked span{color:var(--purple);}
+
+    .hora-reserva-field{display:none;animation:fadeIn .2s ease;}
+    .hora-reserva-field.visible{display:block;}
+
+    /* Productos */
+    #productos-container,#productos-container-r{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.75rem;}
+    .producto-row{display:grid;grid-template-columns:1fr 70px 28px;gap:.4rem;align-items:center;animation:fadeIn .2s ease;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+    .producto-row select,.producto-row input{font-size:.85rem;padding:.55rem .7rem;}
+    .producto-row input{text-align:center;}
+    .btn-remove-row{background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:5px;cursor:pointer;font-size:.85rem;width:28px;height:28px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+    .btn-remove-row:hover{border-color:var(--red);color:var(--red);}
+    .btn-add-row{width:100%;background:transparent;border:1px dashed var(--border);color:var(--text-muted);padding:.5rem;border-radius:6px;cursor:pointer;font-size:.82rem;font-family:'DM Sans',sans-serif;transition:all .2s;margin-bottom:.75rem;}
+    .btn-add-row:hover{border-color:var(--accent);color:var(--accent);}
+    .total-preview{background:var(--surface2);border-radius:6px;padding:.6rem .85rem;display:flex;justify-content:space-between;align-items:center;font-size:.82rem;color:var(--text-muted);margin-bottom:.75rem;}
+    .total-preview strong{color:var(--accent);font-size:1rem;font-weight:700;}
+    .btn-submit{width:100%;border:none;padding:.8rem;border-radius:6px;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:.1em;cursor:pointer;transition:opacity .15s,transform .1s;}
+    .btn-submit:hover{opacity:.88;transform:translateY(-1px);}
+    .btn-submit.orange{background:var(--accent);color:#0f0e0c;}
+    .btn-submit.purple{background:var(--purple);color:#0f0e0c;}
+    .menu-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border);}
+    .menu-item{background:var(--surface2);border-radius:6px;padding:.5rem .7rem;font-size:.78rem;}
+    .menu-item .m-name{color:var(--text-muted);text-transform:capitalize;}
+    .menu-item .m-price{font-weight:600;color:var(--accent);font-size:.85rem;}
+    .col-labels{display:grid;grid-template-columns:1fr 70px 28px;gap:.4rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:.3rem;padding:0 1px;}
+
+    /* ORDERS LIST */
+    .orders-section h2{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.08em;color:var(--text-muted);margin-bottom:1rem;}
+    .empty-state{text-align:center;padding:3rem 1rem;color:var(--text-muted);border:1px dashed var(--border);border-radius:var(--radius);}
+    .empty-state .icon{font-size:2.5rem;margin-bottom:.5rem;}
+    .empty-state p{font-size:.88rem;}
+
+    .order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:.75rem;display:grid;grid-template-columns:40px 1fr auto;gap:1rem;align-items:start;transition:border-color .3s,opacity .3s;}
+    .order-card.new-card{animation:slideIn .3s ease;}
+    @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    .order-card.entregado{border-color:#2e3a2e;opacity:.55;}
+    .order-card.entregado .order-name{text-decoration:line-through;}
+    .order-card.reserva-card{border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.04);}
+
+    .order-num{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--border);text-align:center;line-height:1;padding-top:2px;}
+    .order-name{font-weight:600;font-size:.98rem;margin-bottom:.3rem;}
+    .order-time{font-size:.72rem;color:var(--text-muted);margin-bottom:.5rem;}
+
+    /* Hora reserva chip */
+    .hora-chip{display:inline-flex;align-items:center;gap:.3rem;background:rgba(167,139,250,.12);color:var(--purple);border:1px solid rgba(167,139,250,.25);border-radius:20px;font-size:.72rem;font-weight:600;padding:.15rem .55rem;margin-bottom:.5rem;}
+
+    .items-list{display:flex;flex-direction:column;gap:.25rem;}
+    .item-line{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:.2rem .5rem;border-radius:4px;background:var(--surface2);}
+    .item-line .item-name{color:var(--text-muted);text-transform:capitalize;}
+    .item-line .item-qty{color:var(--text);font-weight:500;padding:0 .5rem;}
+    .item-line .item-sub{color:var(--accent);font-weight:600;white-space:nowrap;}
+    .order-card.entregado .item-name,.order-card.entregado .item-qty{text-decoration:line-through;}
+
+    .order-right{display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;}
+    .order-total{font-weight:700;font-size:1rem;color:var(--accent);white-space:nowrap;}
+    .order-actions{display:flex;gap:.4rem;align-items:center;}
+
+    .btn-toggle{border:none;cursor:pointer;border-radius:4px;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:.3rem .65rem;font-family:'DM Sans',sans-serif;transition:opacity .15s;white-space:nowrap;}
+    .btn-toggle:hover{opacity:.8;}
+    .btn-toggle.por-entregar{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.3);}
+    .btn-toggle.preparando{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.3);}
+    .btn-toggle.entregado-btn{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.25);}
+
+    .btn-delete{background:transparent;border:1px solid var(--border);color:var(--text-muted);border-radius:4px;cursor:pointer;padding:.3rem .5rem;font-size:.8rem;transition:all .15s;}
+    .btn-delete:hover{border-color:var(--red);color:var(--red);}
+
+    .badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:.2rem .55rem;border-radius:20px;}
+    .badge.por-entregar{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+    .badge.preparando{background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.25);}
+    .badge.entregado{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2);}
+    .badge .dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;}
+
+    /* Stats de pago */
+    .stat-efectivo strong{color:var(--green);}
+    .stat-transf strong{color:var(--blue);}
+
+    /* Método de pago */
+    .pago-selector{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem;}
+    .pago-opt{position:relative;}
+    .pago-opt input[type=radio]{position:absolute;opacity:0;width:0;height:0;}
+    .pago-opt label{display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.55rem .5rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text-muted);transition:all .2s;text-align:center;}
+    .pago-opt input[type=radio]:checked + label{border-color:var(--green);background:rgba(74,222,128,.1);color:var(--green);}
+    .pago-opt.transf input[type=radio]:checked + label{border-color:var(--blue);background:rgba(96,165,250,.1);color:var(--blue);}
+
+    /* Stock panel */
+    .stock-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-top:1rem;}
+    .stock-panel h3{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:var(--text-muted);margin-bottom:1rem;}
+    .stock-list{display:flex;flex-direction:column;gap:.45rem;}
+    .stock-item{display:flex;align-items:center;justify-content:space-between;padding:.5rem .7rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+    .stock-item.agotado{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.04);}
+    .stock-item-name{font-size:.85rem;text-transform:capitalize;color:var(--text);}
+    .stock-toggle{display:flex;align-items:center;gap:.5rem;}
+    .stock-badge{font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.15rem .5rem;border-radius:20px;transition:all .2s;}
+    .stock-badge.hay{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.25);}
+    .stock-badge.agotado{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+    /* Switch toggle */
+    .switch{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0;}
+    .switch input{opacity:0;width:0;height:0;}
+    .slider{position:absolute;cursor:pointer;inset:0;background:rgba(248,113,113,.4);border-radius:20px;transition:.25s;}
+    .slider::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.25s;}
+    .switch input:checked + .slider{background:rgba(74,222,128,.6);}
+    .switch input:checked + .slider::before{transform:translateX(16px);}
+    .stock-submit{width:100%;margin-top:.75rem;background:transparent;border:1px dashed var(--border);color:var(--text-muted);padding:.5rem;border-radius:6px;cursor:pointer;font-size:.8rem;font-family:'DM Sans',sans-serif;transition:all .2s;}
+    .stock-submit:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* Badge de pago en tarjeta de pedido */
+    .pago-chip{display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;font-weight:600;padding:.12rem .45rem;border-radius:20px;margin-left:.35rem;}
+    .pago-chip.efectivo{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.25);}
+    .pago-chip.transferencia{background:rgba(96,165,250,.1);color:var(--blue);border:1px solid rgba(96,165,250,.25);}
+
+    /* Stock warning en items */
+    .item-line.sin-stock .item-name{color:var(--red);text-decoration:line-through;}
+    .sin-stock-tag{font-size:.65rem;color:var(--red);font-weight:700;margin-left:.25rem;}
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">Registro de <span>Pedidos</span></div>
+    <div class="header-right">
+      <div class="stats">
+        <div class="stat"><strong id="stat-total">{{ pedidos|length }}</strong>Pedidos</div>
+        <div class="stat"><strong id="stat-pendientes">{{ pedidos|selectattr('estado','equalto','por entregar')|list|length }}</strong>Pendientes</div>
+        <div class="stat"><strong id="stat-reservas">{{ reservas|length }}</strong>Reservas</div>
+        <div class="stat"><strong id="stat-recaudado">${{ "{:,}".format(pedidos|sum(attribute='total')) }}</strong>Total</div>
+        <div class="stat stat-efectivo"><strong id="stat-efectivo">$0</strong>Efectivo</div>
+        <div class="stat stat-transf"><strong id="stat-transferencia">$0</strong>Transf.</div>
+      </div>
+      <div class="live-dot" id="live-indicator">
+        <span class="dot"></span><span id="live-text">Conectando…</span>
+      </div>
+      <a href="/exportar" class="btn-export" title="Exportar a Excel">📊 Exportar</a>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('pedidos',this)">
+      🍟 Pedidos <span class="tab-badge" id="tab-badge-pedidos">{{ pedidos|length }}</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('reservas',this)">
+      🕐 Reservas <span class="tab-badge" id="tab-badge-reservas">{{ reservas|length }}</span>
+    </button>
+  </div>
+
+  <!-- ══════════════ TAB PEDIDOS ══════════════ -->
+  <div class="tab-panel active" id="panel-pedidos">
+    <div class="layout">
+      <aside>
+        <div class="form-card">
+          <h2 class="accent">Nuevo Pedido</h2>
+          <form method="POST" action="/agregar" id="form-pedido">
+            <div class="field">
+              <label>Nombre del cliente</label>
+              <input type="text" name="nombre" placeholder="Ej: María González" required/>
+            </div>
+            <label>Productos</label>
+            <div class="col-labels"><span>Producto</span><span style="text-align:center">Cant.</span><span></span></div>
+            <div id="productos-container">
+              <div class="producto-row">
+                <select name="producto[]" onchange="recalcular('p')">
+                  {% for prod in precios %}<option value="{{ prod }}">{{ prod.capitalize() }}</option>{% endfor %}
+                </select>
+                <input type="number" name="cantidad[]" value="1" min="1" max="99" oninput="recalcular('p')"/>
+                <div></div>
+              </div>
+            </div>
+            <button type="button" class="btn-add-row" onclick="agregarFila('p')">+ Agregar otro producto</button>
+            <div class="total-preview">
+              <span>Total del pedido</span>
+              <strong id="total-display-p">$0</strong>
+            </div>
+            <label>Método de pago</label>
+            <div class="pago-selector" style="margin-bottom:.75rem;">
+              <div class="pago-opt">
+                <input type="radio" name="metodo_pago" id="pago-efectivo" value="efectivo" checked/>
+                <label for="pago-efectivo">💵 Efectivo</label>
+              </div>
+              <div class="pago-opt transf">
+                <input type="radio" name="metodo_pago" id="pago-transf" value="transferencia"/>
+                <label for="pago-transf">📲 Transferencia</label>
+              </div>
+            </div>
+            <button type="submit" class="btn-submit orange">Registrar Pedido</button>
+          </form>
+          <div class="menu-strip">
+            {% for prod, precio in precios.items() %}
+            <div class="menu-item"><div class="m-name">{{ prod }}</div><div class="m-price">${{ "{:,}".format(precio) }}</div></div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Panel de Stock -->
+        <div class="stock-panel">
+          <h3>📦 Stock de productos</h3>
+          <form method="POST" action="/stock/actualizar" id="form-stock">
+            <div class="stock-list">
+              {% for prod in precios %}
+              <div class="stock-item {% if not stock[prod] %}agotado{% endif %}" id="stock-item-{{ loop.index }}">
+                <span class="stock-item-name">{{ prod }}</span>
+                <div class="stock-toggle">
+                  <span class="stock-badge {% if stock[prod] %}hay{% else %}agotado{% endif %}" id="stock-badge-{{ loop.index }}">
+                    {% if stock[prod] %}En stock{% else %}Agotado{% endif %}
+                  </span>
+                  <label class="switch">
+                    <input type="checkbox" name="stock_{{ prod }}" value="1"
+                      data-stock-prod="{{ prod }}"
+                      {% if stock[prod] %}checked{% endif %}
+                      onchange="updateStockUI(this, {{ loop.index }})"/>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <button type="submit" class="stock-submit">Guardar cambios de stock</button>
+          </form>
+        </div>
+      </aside>
+
+      <section class="orders-section">
+        <h2>Lista de Pedidos</h2>
+        <div id="orders-list">
+          {% if not pedidos %}
+          <div class="empty-state"><div class="icon">🍟</div><p>No hay pedidos aún.</p></div>
+          {% endif %}
+          {% for pedido in pedidos %}
+          <div class="order-card {{ pedido.estado|replace(' ','-') }}" data-id="{{ pedido.id }}">
+            <div class="order-num">#{{ pedido.id }}</div>
+            <div class="order-info">
+              <div class="order-name">{{ pedido.nombre }}
+                <span class="pago-chip {{ pedido.metodo_pago }}">
+                  {% if pedido.metodo_pago == 'efectivo' %}💵{% else %}📲{% endif %} {{ pedido.metodo_pago }}
+                </span>
+              </div>
+              <div class="order-time">{{ pedido.hora }}</div>
+              <div class="items-list">
+                {% for item in pedido.productos %}
+                <div class="item-line">
+                  <span class="item-name">{{ item.producto }}</span>
+                  <span class="item-qty">× {{ item.cantidad }}</span>
+                  <span class="item-sub">${{ "{:,}".format(item.subtotal) }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="order-right">
+              <div class="order-total">${{ "{:,}".format(pedido.total) }}</div>
+              <div class="badge {{ pedido.estado|replace(' ','-') }}"><span class="dot"></span>{{ pedido.estado }}</div>
+              <div class="order-actions">
+                <form method="POST" action="/toggle/{{ pedido.id }}" style="display:inline">
+                  {% if pedido.estado == 'por entregar' %}<button class="btn-toggle por-entregar">▶ Preparando</button>
+                  {% elif pedido.estado == 'preparando' %}<button class="btn-toggle preparando">✓ Entregar</button>
+                  {% else %}<button class="btn-toggle entregado-btn">↩ Reabrir</button>{% endif %}
+                </form>
+                <form method="POST" action="/eliminar/{{ pedido.id }}" style="display:inline" onsubmit="return confirm('¿Eliminar?')">
+                  <button class="btn-delete">✕</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB RESERVAS ══════════════ -->
+  <div class="tab-panel" id="panel-reservas">
+    <div class="layout">
+      <aside>
+        <div class="form-card">
+          <h2 class="purple">Nueva Reserva</h2>
+          <form method="POST" action="/reservas/agregar" id="form-reserva">
+            <div class="field">
+              <label>Nombre del cliente</label>
+              <input type="text" name="nombre" placeholder="Ej: Carlos Pérez" required/>
+            </div>
+
+            <div class="field">
+              <label>Hora de la reserva</label>
+              <input type="time" name="hora_reserva" required/>
+            </div>
+
+            <label>Productos</label>
+            <div class="col-labels"><span>Producto</span><span style="text-align:center">Cant.</span><span></span></div>
+            <div id="productos-container-r">
+              <div class="producto-row">
+                <select name="producto[]" onchange="recalcular('r')">
+                  {% for prod in precios %}<option value="{{ prod }}">{{ prod.capitalize() }}</option>{% endfor %}
+                </select>
+                <input type="number" name="cantidad[]" value="1" min="1" max="99" oninput="recalcular('r')"/>
+                <div></div>
+              </div>
+            </div>
+            <button type="button" class="btn-add-row" onclick="agregarFila('r')">+ Agregar otro producto</button>
+            <div class="total-preview">
+              <span>Total de la reserva</span>
+              <strong id="total-display-r">$0</strong>
+            </div>
+            <label>Método de pago</label>
+            <div class="pago-selector" style="margin-bottom:.75rem;">
+              <div class="pago-opt">
+                <input type="radio" name="metodo_pago" id="pago-efectivo-r" value="efectivo" checked/>
+                <label for="pago-efectivo-r">💵 Efectivo</label>
+              </div>
+              <div class="pago-opt transf">
+                <input type="radio" name="metodo_pago" id="pago-transf-r" value="transferencia"/>
+                <label for="pago-transf-r">📲 Transferencia</label>
+              </div>
+            </div>
+            <button type="submit" class="btn-submit purple">Registrar Reserva</button>
+          </form>
+          <div class="menu-strip">
+            {% for prod, precio in precios.items() %}
+            <div class="menu-item"><div class="m-name">{{ prod }}</div><div class="m-price">${{ "{:,}".format(precio) }}</div></div>
+            {% endfor %}
+          </div>
+        </div>
+      </aside>
+
+      <section class="orders-section">
+        <h2>Lista de Reservas</h2>
+        <div id="reservas-list">
+          {% if not reservas %}
+          <div class="empty-state"><div class="icon">🕐</div><p>No hay reservas aún.</p></div>
+          {% endif %}
+          {% for r in reservas %}
+          <div class="order-card reserva-card {{ r.estado|replace(' ','-') }}" data-id="{{ r.id }}">
+            <div class="order-num">#{{ r.id }}</div>
+            <div class="order-info">
+              <div class="order-name">{{ r.nombre }}
+                <span class="pago-chip {{ r.metodo_pago }}">
+                  {% if r.metodo_pago == 'efectivo' %}💵{% else %}📲{% endif %} {{ r.metodo_pago }}
+                </span>
+              </div>
+              <div class="hora-chip">🕐 {{ r.hora_reserva }}</div>
+              <div class="order-time">Registrado: {{ r.hora_registro }}</div>
+              <div class="items-list">
+                {% for item in r.productos %}
+                <div class="item-line">
+                  <span class="item-name">{{ item.producto }}</span>
+                  <span class="item-qty">× {{ item.cantidad }}</span>
+                  <span class="item-sub">${{ "{:,}".format(item.subtotal) }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="order-right">
+              <div class="order-total">${{ "{:,}".format(r.total) }}</div>
+              <div class="badge {{ r.estado|replace(' ','-') }}"><span class="dot"></span>{{ r.estado }}</div>
+              <div class="order-actions">
+                <form method="POST" action="/reservas/toggle/{{ r.id }}" style="display:inline">
+                  {% if r.estado == 'por entregar' %}<button class="btn-toggle por-entregar">▶ Preparando</button>
+                  {% elif r.estado == 'preparando' %}<button class="btn-toggle preparando">✓ Entregar</button>
+                  {% else %}<button class="btn-toggle entregado-btn">↩ Reabrir</button>{% endif %}
+                </form>
+                <form method="POST" action="/reservas/eliminar/{{ r.id }}" style="display:inline" onsubmit="return confirm('¿Eliminar reserva?')">
+                  <button class="btn-delete">✕</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+  const precios = {{ precios|tojson }};
+
+  /* ── Tabs ── */
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    btn.classList.add('active');
+    window.location.hash = name === 'reservas' ? 'reservas' : '';
+  }
+
+  // Abrir tab correcto según hash
+  window.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hash === '#reservas') {
+      document.querySelectorAll('.tab-btn')[1].click();
+    }
+    recalcular('p');
+    recalcular('r');
+    conectarSSE();
+  });
+
+  /* ── Formulario ── */
+  function recalcular(form) {
+    const containerId = form === 'p' ? 'productos-container' : 'productos-container-r';
+    const displayId   = form === 'p' ? 'total-display-p'     : 'total-display-r';
+    let total = 0;
+    document.querySelectorAll('#' + containerId + ' .producto-row').forEach(fila => {
+      const prod = fila.querySelector('select')?.value || '';
+      const cant = parseInt(fila.querySelector('input[type="number"]')?.value) || 0;
+      total += (precios[prod] || 0) * cant;
+    });
+    document.getElementById(displayId).textContent = '$' + total.toLocaleString('es-CL');
+  }
+
+  function agregarFila(form) {
+    const containerId = form === 'p' ? 'productos-container' : 'productos-container-r';
+    const container   = document.getElementById(containerId);
+    const div = document.createElement('div');
+    div.className = 'producto-row';
+    const opts = Object.keys(precios).map(p =>
+      `<option value="${p}">${p.charAt(0).toUpperCase()+p.slice(1)}</option>`).join('');
+    div.innerHTML = `
+      <select name="producto[]" onchange="recalcular('${form}')">${opts}</select>
+      <input type="number" name="cantidad[]" value="1" min="1" max="99" oninput="recalcular('${form}')"/>
+      <button type="button" class="btn-remove-row" onclick="eliminarFila(this,'${form}')">✕</button>`;
+    container.appendChild(div);
+    recalcular(form);
+  }
+
+  function eliminarFila(btn, form) { btn.closest('.producto-row').remove(); recalcular(form); }
+
+  /* ── Render helpers ── */
+  function renderToggle(estado, prefix) {
+    if (estado === 'por entregar') return `<button type="submit" class="btn-toggle por-entregar">▶ Preparando</button>`;
+    if (estado === 'preparando')   return `<button type="submit" class="btn-toggle preparando">✓ Entregar</button>`;
+    return `<button type="submit" class="btn-toggle entregado-btn">↩ Reabrir</button>`;
+  }
+
+  function renderItems(productos) {
+    return productos.map(i => `
+      <div class="item-line">
+        <span class="item-name">${i.producto}</span>
+        <span class="item-qty">× ${i.cantidad}</span>
+        <span class="item-sub">$${i.subtotal.toLocaleString('es-CL')}</span>
+      </div>`).join('');
+  }
+
+  function renderCard(p, isReserva) {
+    const ec = p.estado.replace(' ','-');
+    const toggleUrl  = isReserva ? `/reservas/toggle/${p.id}`  : `/toggle/${p.id}`;
+    const deleteUrl  = isReserva ? `/reservas/eliminar/${p.id}` : `/eliminar/${p.id}`;
+    const extraClass = isReserva ? 'reserva-card' : '';
+    const horaChip   = isReserva ? `<div class="hora-chip">🕐 ${p.hora_reserva}</div>` : '';
+    const horaLine   = isReserva
+      ? `<div class="order-time">Registrado: ${p.hora_registro}</div>`
+      : `<div class="order-time">${p.hora}</div>`;
+    const pagoChip = p.metodo_pago
+      ? `<span class="pago-chip ${p.metodo_pago}">${p.metodo_pago === 'efectivo' ? '💵' : '📲'} ${p.metodo_pago}</span>`
+      : '';
+    return `
+      <div class="order-card ${extraClass} ${ec}" data-id="${p.id}">
+        <div class="order-num">#${p.id}</div>
+        <div class="order-info">
+          <div class="order-name">${p.nombre} ${pagoChip}</div>
+          ${horaChip}${horaLine}
+          <div class="items-list">${renderItems(p.productos)}</div>
+        </div>
+        <div class="order-right">
+          <div class="order-total">$${p.total.toLocaleString('es-CL')}</div>
+          <div class="badge ${ec}"><span class="dot"></span>${p.estado}</div>
+          <div class="order-actions">
+            <form method="POST" action="${toggleUrl}" style="display:inline">${renderToggle(p.estado)}</form>
+            <form method="POST" action="${deleteUrl}" style="display:inline" onsubmit="return confirm('¿Eliminar?')">
+              <button class="btn-delete">✕</button>
+            </form>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function actualizarLista(listId, items, isReserva, emptyIcon, emptyMsg) {
+    const list = document.getElementById(listId);
+    if (!items.length) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">${emptyIcon}</div><p>${emptyMsg}</p></div>`;
+      return;
+    }
+    const existing = new Set([...list.querySelectorAll('.order-card')].map(c => c.dataset.id));
+    list.innerHTML = items.map(p => renderCard(p, isReserva)).join('');
+    list.querySelectorAll('.order-card').forEach(c => { if (!existing.has(c.dataset.id)) c.classList.add('new-card'); });
+  }
+
+  /* ── SSE ── */
+  function conectarSSE() {
+    const indicator = document.getElementById('live-indicator');
+    const liveText  = document.getElementById('live-text');
+    const es = new EventSource('/stream');
+
+    es.onopen = () => { indicator.classList.add('connected'); liveText.textContent = 'En vivo'; };
+    es.onerror = () => { indicator.classList.remove('connected'); liveText.textContent = 'Reconectando…'; };
+
+    es.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      document.getElementById('stat-total').textContent      = d.total_pedidos;
+      document.getElementById('stat-pendientes').textContent  = d.pendientes;
+      document.getElementById('stat-reservas').textContent   = d.total_reservas;
+      document.getElementById('stat-recaudado').textContent  = '$' + d.recaudado.toLocaleString('es-CL');
+      document.getElementById('stat-efectivo').textContent   = '$' + d.recaudado_efectivo.toLocaleString('es-CL');
+      document.getElementById('stat-transferencia').textContent = '$' + d.recaudado_transferencia.toLocaleString('es-CL');
+      document.getElementById('tab-badge-pedidos').textContent  = d.total_pedidos;
+      document.getElementById('tab-badge-reservas').textContent = d.total_reservas;
+      // Actualizar stock UI si cambió desde otro cliente
+      if (d.stock) {
+        Object.entries(d.stock).forEach(([prod, hayStock]) => {
+          document.querySelectorAll(`[data-stock-prod="${prod}"]`).forEach(el => {
+            const item = el.closest('.stock-item');
+            const badge = item?.querySelector('.stock-badge');
+            if (item) { item.classList.toggle('agotado', !hayStock); }
+            if (badge) { badge.className = 'stock-badge ' + (hayStock ? 'hay' : 'agotado'); badge.textContent = hayStock ? 'En stock' : 'Agotado'; }
+            el.checked = hayStock;
+          });
+        });
+      }
+      actualizarLista('orders-list',  d.pedidos,  false, '🍟', 'No hay pedidos aún.');
+      actualizarLista('reservas-list', d.reservas, true,  '🕐', 'No hay reservas aún.');
+    };
+  }
+  /* ── Stock UI ── */
+  function updateStockUI(checkbox, idx) {
+    const hayStock = checkbox.checked;
+    const item  = checkbox.closest('.stock-item');
+    const badge = item?.querySelector('.stock-badge');
+    if (item)  { item.classList.toggle('agotado', !hayStock); }
+    if (badge) { badge.className = 'stock-badge ' + (hayStock ? 'hay' : 'agotado'); badge.textContent = hayStock ? 'En stock' : 'Agotado'; }
+  }
+</script>
+</html>
